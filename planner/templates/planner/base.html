@@ -40,10 +40,13 @@
 
   <header class="site-header" data-header>
     <div class="container nav">
-      <a class="brand" href="{% url 'planner:home' %}" aria-label="TripCraft AI home">
-        <img src="{% static 'planner/img/favicon.svg' %}" alt="" width="30" height="30">
-        <span>TripCraft<span class="brand-ai">AI</span></span>
-      </a>
+      <div class="brand-group">
+        <a class="brand" href="{% url 'planner:home' %}" aria-label="TripCraft AI home">
+          <img src="{% static 'planner/img/favicon.svg' %}" alt="" width="30" height="30">
+          <span>TripCraft<span class="brand-ai">AI</span></span>
+        </a>
+        <span class="brand-by">by {{ site_author }}</span>
+      </div>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu" data-nav-toggle>
         <span class="visually-hidden">Menu</span><span class="nav-toggle-bar" aria-hidden="true"></span>
       </button>
@@ -84,6 +87,7 @@
           <span>TripCraft<span class="brand-ai">AI</span></span>
         </a>
         <p class="muted">{{ site_tagline }}</p>
+        <p class="muted small">Designed &amp; developed by {{ site_author }}</p>
       </div>
       <nav aria-label="Footer">
         <h2 class="footer-heading">Explore</h2>
@@ -102,7 +106,7 @@
       </div>
     </div>
     <div class="container footer-base small muted">
-      <span>© {{ year }} TripCraft AI · College project</span>
+      <span>© {{ year }} TripCraft AI · Built by {{ site_author }} · College project</span>
       <span>Photography via Unsplash (Unsplash License)</span>
     </div>
   </footer>

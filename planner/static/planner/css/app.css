@@ -123,6 +123,8 @@ main:focus { outline: none; }
 .nav { display: flex; align-items: center; justify-content: space-between; height: 68px; }
 .brand { display: inline-flex; align-items: center; gap: .55rem; font: 600 1.25rem/1 var(--font-display); color: var(--ink); text-decoration: none; }
 .brand:hover { color: var(--ink); }
+.brand-group { display: flex; align-items: baseline; gap: .7rem; min-width: 0; }
+.brand-by { font-size: .82rem; color: var(--muted); white-space: nowrap; padding-left: .7rem; border-left: 1px solid var(--border-strong); line-height: 1.2; }
 .brand-ai { margin-left: .3em; padding: .12em .4em; border-radius: 6px; background: var(--sage-100); color: var(--brand); font: 600 .7rem/1.2 var(--font-body); letter-spacing: .06em; vertical-align: .25em; }
 .nav-menu { display: flex; align-items: center; gap: 1.6rem; }
 .nav-menu > a:not(.btn), .nav-logout .link-button { color: var(--ink-2); text-decoration: none; font-weight: 500; font-size: .95rem; }
@@ -500,6 +502,8 @@ input[type="range"] { width: 100%; accent-color: var(--brand); height: 28px; }
 }
 @media (max-width: 560px) {
   .container { padding: 0 16px; }
+  .brand-group { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .brand-by { border-left: 0; padding-left: 38px; font-size: .74rem; }
   .field-row, .pace-options { grid-template-columns: 1fr; }
   .plan-form, .day-panel, .card { padding: 20px; }
   .hero-visual { grid-template-columns: 1fr; grid-template-rows: auto; aspect-ratio: auto; }

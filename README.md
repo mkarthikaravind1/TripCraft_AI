@@ -6,8 +6,9 @@ TripCraft AI is a full-stack Django web application that turns a destination, da
 
 | | |
 |---|---|
-| **Live website** | _Not deployed yet — add the verified `https://…onrender.com` URL here after deployment_ |
-| **GitHub repository** | _Add the repository URL here after pushing_ |
+| **Live website** | https://tripcraft-ai-hdt4.onrender.com |
+| **GitHub repository** | https://github.com/mkarthikaravind1/TripCraft_AI |
+| **Author** | Karthik Aravind M |
 | **Health check** | `/health/` (liveness) and `/health/ready/` (readiness) |
 
 ---
