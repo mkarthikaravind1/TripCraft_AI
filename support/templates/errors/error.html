@@ -1,0 +1,27 @@
+{% extends "planner/base.html" %}
+{% load static %}
+{% block title %}{{ error.title }} · TripCraft AI{% endblock %}
+{% block body_class %}page-error{% endblock %}
+
+{% block content %}
+<section class="error-page">
+  <div class="container error-grid">
+    <div class="error-copy">
+      <p class="eyebrow">{% if error.code|slice:":1" == "T" %}{{ error.code }}{% else %}Error {{ error.code }}{% endif %}</p>
+      <h1>{% block headline %}{{ error.title }}{% endblock %}</h1>
+      <p class="lead">{% if message %}{{ message }}{% else %}{{ error.meaning }}{% endif %}</p>
+      <p class="muted">{{ error.user_action }}</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{% url 'planner:home' %}">Back to home</a>
+        <button type="button" class="btn btn-outline" data-open-chat data-chat-prefill="I got error {{ error.code }}. What should I do?">Ask the assistant</button>
+        <a class="btn btn-ghost" href="{% url 'support:faq' %}#error-codes">Help centre</a>
+      </div>
+      {% if request_id %}<p class="small muted">Reference for support: <code>{{ request_id }}</code></p>{% endif %}
+    </div>
+    <figure class="error-photo">
+      <img src="{% static 'planner/img/roadtrip.jpg' %}" alt="Camper van on an open desert road" width="1100" height="733" data-fallback>
+      <figcaption>{% block caption %}Even the best journeys take a wrong turn sometimes.{% endblock %}</figcaption>
+    </figure>
+  </div>
+</section>
+{% endblock %}

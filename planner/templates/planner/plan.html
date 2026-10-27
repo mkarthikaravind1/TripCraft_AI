@@ -1,0 +1,135 @@
+{% extends "planner/base.html" %}
+{% load static %}
+{% block title %}Plan a trip · TripCraft AI{% endblock %}
+{% block body_class %}page-plan{% endblock %}
+
+{% block content %}
+<section class="plan-page">
+  <div class="container plan-grid">
+    <aside class="plan-aside">
+      <p class="eyebrow">Plan a trip</p>
+      <h1>Let's shape your journey.</h1>
+      <p class="muted">Three quick steps. We'll draft each day, estimate costs and hand you a dashboard to fine-tune.</p>
+      <ol class="stepper" data-stepper aria-label="Form progress">
+        <li class="is-current" data-stepper-item="0"><span>1</span> Where &amp; when</li>
+        <li data-stepper-item="1"><span>2</span> Budget &amp; group</li>
+        <li data-stepper-item="2"><span>3</span> Your travel style</li>
+      </ol>
+      {% if not ai_configured %}
+        <div class="notice notice-info">
+          <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+          <p><strong>Live AI is not configured on this server</strong> (code <a href="{% url 'support:faq' %}#error-TRIPCRAFT_001">TRIPCRAFT_001</a>). You'll receive a clearly labelled sample itinerary built from local templates.</p>
+        </div>
+      {% endif %}
+      <figure class="plan-photo">
+        <img src="{% static 'planner/img/roadtrip.jpg' %}" alt="Yellow camper van on a desert road among red rock formations" width="1100" height="733" loading="lazy" data-fallback>
+      </figure>
+    </aside>
+
+    <form class="card plan-form" method="post" action="{% url 'planner:plan' %}" novalidate data-plan-form>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="notice notice-error" role="alert">{{ form.non_field_errors|join:" " }}</div>
+      {% endif %}
+      {% if form.errors %}
+        <div class="notice notice-error" role="alert" data-error-summary>
+          <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+          <p>Please fix the highlighted fields below.</p>
+        </div>
+      {% endif %}
+
+      <fieldset class="form-step" data-step="0">
+        <legend><span class="step-kicker">Step 1 of 3</span> Where &amp; when</legend>
+        {% include "planner/partials/field.html" with field=form.destination %}
+        {% include "planner/partials/field.html" with field=form.origin %}
+        <div class="field-row">
+          {% include "planner/partials/field.html" with field=form.start_date %}
+          {% include "planner/partials/field.html" with field=form.end_date %}
+        </div>
+        <p class="hint" data-duration aria-live="polite"></p>
+      </fieldset>
+
+      <fieldset class="form-step" data-step="1">
+        <legend><span class="step-kicker">Step 2 of 3</span> Budget &amp; group</legend>
+        <div class="field{% if form.budget.errors %} has-error{% endif %}">
+          <label for="{{ form.budget.id_for_label }}">Total budget for the whole group</label>
+          <div class="input-group">
+            <select name="currency" id="{{ form.currency.id_for_label }}" aria-label="Currency">
+              {% for value, label in form.currency.field.choices %}
+                <option value="{{ value }}"{% if form.currency.value == value %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <input type="number" name="budget" id="{{ form.budget.id_for_label }}" value="{{ form.budget.value|default_if_none:'' }}" min="1" step="any" inputmode="decimal" placeholder="60000" required aria-describedby="budget-hint{% if form.budget.errors %} budget-error{% endif %}"{% if form.budget.errors %} aria-invalid="true"{% endif %}>
+          </div>
+          <p class="hint" id="budget-hint">Include travel, stays, food and activities. We'll split it for you.</p>
+          {% if form.budget.errors %}<p class="error" id="budget-error">{{ form.budget.errors|join:" " }}</p>{% endif %}
+        </div>
+        <div class="field-row">
+          {% include "planner/partials/field.html" with field=form.travellers %}
+          {% include "planner/partials/field.html" with field=form.transport %}
+        </div>
+        <p class="hint" data-per-person aria-live="polite"></p>
+      </fieldset>
+
+      <fieldset class="form-step" data-step="2">
+        <legend><span class="step-kicker">Step 3 of 3</span> Your travel style</legend>
+        <div class="field{% if form.interests.errors %} has-error{% endif %}" role="group" aria-labelledby="interests-label">
+          <p class="label" id="interests-label">What do you enjoy? <span class="muted">(pick 1–6)</span></p>
+          <div class="chips">
+            {% for choice in form.interests %}
+              <label class="chip">
+                {{ choice.tag }}
+                <span>{{ choice.choice_label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {% if form.interests.errors %}<p class="error">{{ form.interests.errors|join:" " }}</p>{% endif %}
+        </div>
+
+        <div class="field{% if form.pace.errors %} has-error{% endif %}" role="radiogroup" aria-labelledby="pace-label">
+          <p class="label" id="pace-label">Preferred pace</p>
+          <div class="pace-options">
+            {% for choice in form.pace %}
+              <label class="pace-option">
+                {{ choice.tag }}
+                <span class="pace-title">{{ choice.choice_label }}</span>
+                <span class="pace-desc">{% cycle "Late starts, 2–3 things a day" "A comfortable 3–4 a day" "Early starts, see it all" %}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="field-row">
+          {% include "planner/partials/field.html" with field=form.dietary %}
+          {% include "planner/partials/field.html" with field=form.accessibility %}
+        </div>
+        {% include "planner/partials/field.html" with field=form.notes %}
+      </fieldset>
+
+      <div class="form-nav">
+        <button type="button" class="btn btn-ghost" data-step-back hidden>Back</button>
+        <span class="form-nav-spacer"></span>
+        <button type="button" class="btn btn-primary" data-step-next hidden>Continue <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <button type="submit" class="btn btn-primary btn-lg" data-submit>Generate my itinerary</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="loading-overlay" data-loading hidden role="alertdialog" aria-modal="true" aria-labelledby="loading-title" aria-describedby="loading-step">
+    <div class="loading-card">
+      <div class="loading-route" aria-hidden="true"><span></span></div>
+      <h2 id="loading-title">Crafting your itinerary…</h2>
+      <p id="loading-step" class="muted" aria-live="polite" data-loading-step>Reading your preferences</p>
+      <ol class="loading-steps" aria-hidden="true">
+        <li>Reading your preferences</li>
+        <li>Drafting each day</li>
+        <li>Balancing your budget</li>
+        <li>Validating the plan</li>
+      </ol>
+      <p class="small muted">This usually takes 15–45 seconds. Please keep this tab open.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'planner/js/plan-form.js' %}" defer></script>{% endblock %}

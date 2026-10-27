@@ -1,0 +1,121 @@
+{% extends "planner/base.html" %}
+{% load static %}
+{% block body_class %}page-home{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">AI travel planner for students &amp; explorers</p>
+      <h1>Tell us where you're going. <em>We'll plan every day.</em></h1>
+      <p class="lead">TripCraft AI turns your destination, dates, budget and interests into a realistic day-by-day itinerary — with a live budget you can tweak before you book anything.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="{% url 'planner:plan' %}">Plan your trip <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        <a class="btn btn-ghost btn-lg" href="#how-it-works">See how it works</a>
+      </div>
+      <ul class="hero-points" aria-label="Highlights">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Free, no sign-up needed</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Budget maths you can trust</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Print or save as PDF</li>
+      </ul>
+    </div>
+
+    <div class="hero-visual">
+      <figure class="collage-main">
+        <img src="{% static 'planner/img/hero-lake.jpg' %}" alt="Turquoise alpine lake with a wooden boat beneath tall mountains" width="1100" height="733" fetchpriority="high" data-fallback>
+      </figure>
+      <figure class="collage-side collage-side-top">
+        <img src="{% static 'planner/img/kyoto.jpg' %}" alt="Traditional wooden street in Kyoto at dusk with a pagoda" width="1100" height="733" loading="lazy" data-fallback>
+      </figure>
+      <figure class="collage-side collage-side-bottom">
+        <img src="{% static 'planner/img/halong.jpg' %}" alt="Limestone islands and boats in Ha Long Bay" width="1100" height="733" loading="lazy" data-fallback>
+      </figure>
+
+      <article class="sample-card" aria-label="Example of a generated itinerary day">
+        <header>
+          <span class="tag tag-sample">Example</span>
+          <h2>Kyoto · Day 2</h2>
+          <p class="muted small">Temples &amp; tea · Balanced pace</p>
+        </header>
+        <ol class="sample-timeline">
+          <li><time>08:30</time><div><strong>Fushimi Inari gates walk</strong><span>Southern Higashiyama · 2 h</span></div></li>
+          <li><time>12:00</time><div><strong>Nishiki Market lunch crawl</strong><span>Downtown · ~¥2,000 pp</span></div></li>
+          <li><time>15:30</time><div><strong>Tea ceremony in Gion</strong><span>Gion · 1 h</span></div></li>
+        </ol>
+        <footer>
+          <span class="muted small">Day estimate</span>
+          <strong>¥18,400</strong>
+        </footer>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="section">
+  <div class="container">
+    <div class="section-head reveal">
+      <p class="eyebrow">Three things, done properly</p>
+      <h2>Everything you need between “where should we go?” and “we're booked.”</h2>
+    </div>
+    <div class="feature-grid">
+      <article class="feature-card reveal">
+        <span class="feature-icon"><svg class="icon" aria-hidden="true"><use href="#i-route"/></svg></span>
+        <h3>AI itinerary generator</h3>
+        <p>Google Gemini drafts a day-by-day plan around your interests, group size and pace — with time slots, neighbourhoods, meals and rest breaks.</p>
+      </article>
+      <article class="feature-card reveal">
+        <span class="feature-icon"><svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg></span>
+        <h3>Smart budget optimiser</h3>
+        <p>Deterministic calculations split your spend across transport, stays, food, activities and extras. Try cheaper meals or stays and see the savings instantly.</p>
+      </article>
+      <article class="feature-card reveal">
+        <span class="feature-icon"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg></span>
+        <h3>Interactive dashboard</h3>
+        <p>Switch days, tick off activities, remove what you don't fancy and watch the charts update. Print a clean copy or save it as a PDF.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works" class="section section-tint">
+  <div class="container how-grid">
+    <div class="section-head reveal">
+      <p class="eyebrow">How it works</p>
+      <h2>From idea to itinerary in about a minute.</h2>
+      <p class="muted">Estimates are clearly labelled. TripCraft never pretends a guess is a verified price.</p>
+      <a class="btn btn-primary" href="{% url 'planner:plan' %}">Start planning</a>
+    </div>
+    <ol class="steps">
+      <li class="reveal"><span class="step-num">1</span><div><h3>Share your trip</h3><p>Destination, dates, budget, travellers and what you love doing.</p></div></li>
+      <li class="reveal"><span class="step-num">2</span><div><h3>Get a tailored plan</h3><p>Gemini builds each day; TripCraft validates every field before saving it.</p></div></li>
+      <li class="reveal"><span class="step-num">3</span><div><h3>Tune the budget</h3><p>Adjust meals, stays, transport and buffer. Totals and charts update live.</p></div></li>
+      <li class="reveal"><span class="step-num">4</span><div><h3>Save or print</h3><p>Your plan is saved in this browser — or to your account if you sign up.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section help-band-section" aria-labelledby="help-title">
+  <div class="container help-band reveal">
+    <div>
+      <p class="eyebrow">Help when you need it</p>
+      <h2 id="help-title">Questions about budgets, saving or an error code?</h2>
+      <p class="muted">Browse the help centre, or ask the TripCraft assistant — it answers from our FAQs and error guide, and can open a support ticket if it can't help.</p>
+    </div>
+    <div class="help-band-actions">
+      <a class="btn btn-primary" href="{% url 'support:faq' %}">Visit the help centre</a>
+      <button type="button" class="btn btn-outline" data-open-chat>Ask the assistant</button>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container cta-band reveal">
+    <img src="{% static 'planner/img/istanbul.jpg' %}" alt="Galata Tower above the rooftops of Istanbul" width="1100" height="733" loading="lazy" data-fallback>
+    <div class="cta-copy">
+      <h2>Your next trip deserves better than twenty open tabs.</h2>
+      <p>Plan a weekend getaway or a two-week adventure — up to 14 days, for up to 20 travellers.</p>
+      <a class="btn btn-light btn-lg" href="{% url 'planner:plan' %}">Plan your trip</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

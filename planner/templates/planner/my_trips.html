@@ -1,0 +1,50 @@
+{% extends "planner/base.html" %}
+{% load tripcraft %}
+{% block title %}My trips · TripCraft AI{% endblock %}
+
+{% block content %}
+<section class="section page-narrow">
+  <div class="container">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">{% if user.is_authenticated %}Saved to your account{% else %}Saved in this browser{% endif %}</p>
+        <h1>My trips</h1>
+      </div>
+      <a class="btn btn-primary" href="{% url 'planner:plan' %}">Plan a new trip</a>
+    </div>
+
+    {% if not user.is_authenticated %}
+      <p class="notice notice-soft">
+        <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+        <span>Trips you create without an account are kept in this browser session. <a href="{% url 'signup' %}">Sign up</a> or <a href="{% url 'login' %}">log in</a> to save them to an account.</span>
+      </p>
+    {% endif %}
+
+    {% if trips %}
+      <ul class="trip-list">
+        {% for trip in trips %}
+          <li>
+            <a class="trip-item card" href="{% url 'planner:trip_detail' trip.id %}">
+              <div>
+                <h2>{{ trip.destination }}</h2>
+                <p class="muted small">{{ trip.start_date|date:"j M" }} – {{ trip.end_date|date:"j M Y" }} · {{ trip.num_days }} day{{ trip.num_days|pluralize }} · {{ trip.travellers }} traveller{{ trip.travellers|pluralize }}</p>
+              </div>
+              <div class="trip-item-meta">
+                <span class="tag {% if trip.is_ai %}tag-ai{% else %}tag-sample{% endif %}">{% if trip.is_ai %}AI{% else %}Sample{% endif %}</span>
+                <strong>{{ trip.estimated_total|money_amount:trip.currency }}</strong>
+                <span class="small muted">of {{ trip.budget|money_amount:trip.currency }}</span>
+              </div>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty card">
+        <h2>No trips yet</h2>
+        <p class="muted">Your planned trips will appear here.</p>
+        <a class="btn btn-primary" href="{% url 'planner:plan' %}">Plan your first trip</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

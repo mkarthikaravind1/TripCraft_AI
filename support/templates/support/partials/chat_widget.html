@@ -1,0 +1,73 @@
+{% load static %}
+<div class="chat no-print" data-chat
+     data-endpoint="{% url 'support:chat' %}"
+     data-state-endpoint="{% url 'support:chat_state' %}"
+     data-ticket-endpoint="{% url 'support:chat_ticket' %}"
+     data-feedback-endpoint="{% url 'support:chat_feedback' %}"
+     data-faq-url="{% url 'support:faq' %}">
+  <button type="button" class="chat-launcher" aria-expanded="false" aria-controls="chat-panel" data-chat-toggle>
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-5.5L7 20v-4a2.5 2.5 0 0 1-2.5-2.5v-7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 9h7M8.5 12h4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <span class="chat-launcher-label">Ask TripCraft</span>
+  </button>
+
+  <section id="chat-panel" class="chat-panel" role="dialog" aria-modal="false" aria-labelledby="chat-title" hidden>
+    <header class="chat-head">
+      <div>
+        <h2 id="chat-title">TripCraft assistant</h2>
+        <p>Answers from our help centre · AI-assisted when available</p>
+      </div>
+      <button type="button" class="chat-close" data-chat-close aria-label="Close assistant">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+
+    <div class="chat-log" role="log" aria-live="polite" aria-relevant="additions" data-chat-log tabindex="0" aria-label="Conversation">
+      <div class="msg msg-assistant">
+        <div class="bubble">
+          <p>Hi! I can help with planning, budgets, saving or printing, and error codes. If I can't answer, I'll offer to create a support ticket.</p>
+        </div>
+      </div>
+      <div class="chat-suggestions" data-chat-suggestions>
+        <button type="button" data-suggest>How do I print my itinerary?</button>
+        <button type="button" data-suggest>What does error 404 mean?</button>
+        <button type="button" data-suggest>Explain TRIPCRAFT_001</button>
+      </div>
+    </div>
+
+    <form class="chat-ticket" data-chat-ticket hidden novalidate>
+      <p class="chat-ticket-title">Create a support ticket</p>
+      <label for="chat-ticket-subject">Subject</label>
+      <input id="chat-ticket-subject" name="subject" type="text" maxlength="120" required>
+      <label for="chat-ticket-description">What happened?</label>
+      <textarea id="chat-ticket-description" name="description" rows="3" maxlength="2000" required></textarea>
+      <div class="chat-ticket-row">
+        <div>
+          <label for="chat-ticket-code">Error code</label>
+          <select id="chat-ticket-code" name="error_code">
+            <option value="">None</option>
+            {% for e in assistant_error_codes %}<option value="{{ e.code }}">{{ e.code }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="chat-ticket-email">Email <span>(optional)</span></label>
+          <input id="chat-ticket-email" name="contact_email" type="email" maxlength="254" autocomplete="email">
+        </div>
+      </div>
+      <p class="chat-ticket-error" data-ticket-error role="alert" hidden></p>
+      <div class="chat-ticket-actions">
+        <button type="button" class="btn btn-ghost btn-sm" data-ticket-cancel>Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm" data-ticket-submit>Confirm &amp; create ticket</button>
+      </div>
+    </form>
+
+    <form class="chat-input" data-chat-form>
+      <label for="chat-message" class="visually-hidden">Ask a question</label>
+      <textarea id="chat-message" name="message" rows="1" maxlength="1000" placeholder="Ask about trips, budgets or errors…" required data-chat-input></textarea>
+      <button type="submit" class="chat-send" aria-label="Send message" data-chat-send>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12 20 4.5 15.5 20l-3-6.5-8-1.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </button>
+    </form>
+    <p class="chat-foot">Please don't share passwords or payment details. Conversations are stored to improve help answers.</p>
+  </section>
+</div>
+<script src="{% static 'support/js/chat.js' %}" defer></script>

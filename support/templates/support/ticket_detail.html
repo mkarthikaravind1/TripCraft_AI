@@ -1,0 +1,28 @@
+{% extends "planner/base.html" %}
+{% block title %}Ticket {{ ticket.reference }} · TripCraft AI{% endblock %}
+
+{% block content %}
+<section class="section page-narrow">
+  <div class="container">
+    <div class="card ticket-card">
+      <p class="eyebrow">Support ticket</p>
+      <h1>{{ ticket.reference }}</h1>
+      <p class="ticket-status">
+        <span class="status-pill status-{{ ticket.status|lower }}">{{ ticket.get_status_display }}</span>
+        <span class="muted small">Priority: {{ ticket.get_priority_display }} · Created {{ ticket.created_at|date:"j M Y, H:i" }} · Via {{ ticket.get_channel_display }}</span>
+      </p>
+      <dl class="ticket-fields">
+        <div><dt>Subject</dt><dd>{{ ticket.subject }}</dd></div>
+        <div><dt>Description</dt><dd>{{ ticket.description|linebreaksbr }}</dd></div>
+        {% if ticket.error_code %}<div><dt>Error code</dt><dd>{{ ticket.error_code }}{% if error %} — {{ error.title }}{% endif %}</dd></div>{% endif %}
+        <div><dt>Reply by email</dt><dd>{% if ticket.contact_email %}Requested ({{ ticket.contact_email }}){% else %}Not requested{% endif %}</dd></div>
+      </dl>
+      <p class="small muted">No email has been sent automatically. Keep this reference — the support team reviews tickets in the TripCraft admin dashboard.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{% url 'support:faq' %}">Back to help centre</a>
+        <a class="btn btn-ghost" href="{% url 'planner:plan' %}">Plan a trip</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

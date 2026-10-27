@@ -1,0 +1,113 @@
+{% extends "planner/base.html" %}
+{% load static %}
+{% block title %}Help centre & FAQ · TripCraft AI{% endblock %}
+{% block description %}Answers to common TripCraft AI questions, a guide to every error code, and a way to contact support.{% endblock %}
+{% block body_class %}page-faq{% endblock %}
+
+{% block content %}
+<section class="faq-hero">
+  <div class="container faq-hero-inner">
+    <p class="eyebrow">Help centre</p>
+    <h1>How can we help with your trip?</h1>
+    <p class="lead">Search our answers, look up an error code, or ask the TripCraft assistant.</p>
+    <div class="faq-search">
+      <label for="faq-search" class="visually-hidden">Search the FAQs</label>
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input type="search" id="faq-search" placeholder="Search e.g. “print”, “budget”, “404”" autocomplete="off" data-faq-search>
+    </div>
+    <div class="faq-filters" role="group" aria-label="Filter by topic">
+      <button type="button" class="filter-chip" aria-pressed="true" data-faq-filter="">All topics</button>
+      {% for value, label in categories %}
+        <button type="button" class="filter-chip" aria-pressed="false" data-faq-filter="{{ value }}">{{ label }}</button>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section faq-section">
+  <div class="container faq-layout">
+    <div>
+      <h2 class="section-title">Frequently asked questions</h2>
+      <p class="muted small" data-faq-count aria-live="polite">{{ faqs|length }} questions</p>
+      <div class="faq-list" data-faq-list>
+        {% for faq in faqs %}
+          <details class="faq-item" id="faq-{{ faq.id }}" data-category="{{ faq.category }}">
+            <summary>
+              <span>{{ faq.question }}</span>
+              <svg class="icon chev" aria-hidden="true"><use href="#i-chev"/></svg>
+            </summary>
+            <div class="faq-answer">
+              <p>{{ faq.answer }}</p>
+              <p class="faq-meta small muted">{{ faq.get_category_display }}</p>
+            </div>
+          </details>
+        {% empty %}
+          <p class="empty-state">No FAQs are available right now.</p>
+        {% endfor %}
+      </div>
+      <p class="empty-state" data-faq-empty hidden>No questions match your search. <button type="button" class="link-button link-inline" data-open-chat>Ask the assistant instead</button>.</p>
+    </div>
+
+    <aside class="faq-aside">
+      <div class="card assistant-card">
+        <h2 class="card-title">Ask the assistant</h2>
+        <p class="muted small">It answers from these FAQs and our error guide, and can create a support ticket if it can't help.</p>
+        <button type="button" class="btn btn-primary btn-block" data-open-chat>Open the assistant</button>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section class="section section-tint" id="error-codes" aria-labelledby="errors-title">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow">Error guide</p>
+      <h2 id="errors-title">Supported error codes</h2>
+      <p class="muted">Every error page and the assistant use this same guide.</p>
+    </div>
+    <div class="error-code-grid">
+      {% for e in error_codes %}
+        <article class="error-code-card" id="error-{{ e.code }}">
+          <header>
+            <span class="error-code-pill">{{ e.code }}</span>
+            <h3>{{ e.title }}</h3>
+          </header>
+          <p>{{ e.meaning }}</p>
+          <details>
+            <summary>Causes &amp; what to do</summary>
+            <h4>Common causes</h4>
+            <ul>{% for c in e.causes %}<li>{{ c }}</li>{% endfor %}</ul>
+            <h4>What to do</h4>
+            <p>{{ e.user_action }}</p>
+            <ul>{% for t in e.troubleshooting %}<li>{{ t }}</li>{% endfor %}</ul>
+            <p class="small muted">Where you'll see it: {{ e.where }}</p>
+          </details>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section" id="contact-support" aria-labelledby="contact-title">
+  <div class="container contact-grid">
+    <div>
+      <p class="eyebrow">Contact support</p>
+      <h2 id="contact-title">Still stuck? Create a support ticket.</h2>
+      <p class="muted">Tickets are saved with a reference such as TC-ABCD2345 so you can check their status. Email is optional — TripCraft doesn't send automatic emails, so keep your reference.</p>
+    </div>
+    <form class="card ticket-form" method="post" action="{% url 'support:create_ticket' %}#contact-support" novalidate>
+      {% csrf_token %}
+      {% if ticket_form.errors %}<p class="notice notice-error" role="alert">Please fix the highlighted fields.</p>{% endif %}
+      {% include "planner/partials/field.html" with field=ticket_form.subject %}
+      {% include "planner/partials/field.html" with field=ticket_form.description %}
+      <div class="field-row">
+        {% include "planner/partials/field.html" with field=ticket_form.error_code %}
+        {% include "planner/partials/field.html" with field=ticket_form.contact_email %}
+      </div>
+      <button type="submit" class="btn btn-primary">Create ticket</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'support/js/faq.js' %}" defer></script>{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "planner/base.html" %}
+{% block title %}Log in · TripCraft AI{% endblock %}
+
+{% block content %}
+<section class="section auth-page">
+  <div class="container">
+    <form class="card auth-card" method="post" action="{% url 'login' %}">
+      {% csrf_token %}
+      <p class="eyebrow">Welcome back</p>
+      <h1>Log in</h1>
+      {% if form.errors %}<p class="notice notice-error" role="alert">Your username and password didn't match. Please try again.</p>{% endif %}
+      {% include "planner/partials/field.html" with field=form.username %}
+      {% include "planner/partials/field.html" with field=form.password %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button type="submit" class="btn btn-primary btn-block">Log in</button>
+      <p class="small muted">New here? <a href="{% url 'signup' %}">Create a free account</a>. Trips planned in this browser will be added to your account.</p>
+    </form>
+  </div>
+</section>
+{% endblock %}

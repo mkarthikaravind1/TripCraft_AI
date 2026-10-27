@@ -1,0 +1,20 @@
+{% extends "planner/base.html" %}
+{% block title %}Sign up · TripCraft AI{% endblock %}
+
+{% block content %}
+<section class="section auth-page">
+  <div class="container">
+    <form class="card auth-card" method="post" action="{% url 'signup' %}">
+      {% csrf_token %}
+      <p class="eyebrow">Free account</p>
+      <h1>Create your account</h1>
+      <p class="muted small">Only a username and password — no email or personal details required.</p>
+      {% for field in form %}
+        {% include "planner/partials/field.html" with field=field %}
+      {% endfor %}
+      <button type="submit" class="btn btn-primary btn-block">Sign up</button>
+      <p class="small muted">Already have an account? <a href="{% url 'login' %}">Log in</a>.</p>
+    </form>
+  </div>
+</section>
+{% endblock %}
