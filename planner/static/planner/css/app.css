@@ -125,6 +125,7 @@ main:focus { outline: none; }
 .brand:hover { color: var(--ink); }
 .brand-group { display: flex; align-items: baseline; gap: .7rem; min-width: 0; }
 .brand-by { font-size: .82rem; color: var(--muted); white-space: nowrap; padding-left: .7rem; border-left: 1px solid var(--border-strong); line-height: 1.2; }
+.brand-by strong { font-weight: 700; color: var(--ink-2); }
 .brand-ai { margin-left: .3em; padding: .12em .4em; border-radius: 6px; background: var(--sage-100); color: var(--brand); font: 600 .7rem/1.2 var(--font-body); letter-spacing: .06em; vertical-align: .25em; }
 .nav-menu { display: flex; align-items: center; gap: 1.6rem; }
 .nav-menu > a:not(.btn), .nav-logout .link-button { color: var(--ink-2); text-decoration: none; font-weight: 500; font-size: .95rem; }
