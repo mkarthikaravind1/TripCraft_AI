@@ -7,6 +7,7 @@ method returning raw text can be swapped in.
 """
 
 import logging
+import time
 from dataclasses import dataclass
 
 from django.conf import settings
@@ -33,6 +34,11 @@ PACE_GUIDANCE = {
     "balanced": "3–4 main activities per day with a short rest break",
     "packed": "4–6 main activities per day, starting early, minimal downtime",
 }
+
+
+RETRYABLE_CODES = {500, 503}
+RETRY_WINDOW_SECONDS = 15  # only retry failures that came back quickly
+RETRY_DELAY_SECONDS = 2
 
 
 class AIUnavailable(Exception):
@@ -162,8 +168,19 @@ class GeminiProvider:
             max_output_tokens=max_output_tokens or self.max_output_tokens,
             system_instruction=system_instruction,
         )
+        started = time.monotonic()
         try:
-            response = client.models.generate_content(model=self.model, contents=prompt, config=config)
+            try:
+                response = client.models.generate_content(model=self.model, contents=prompt, config=config)
+            except errors.APIError as exc:
+                # Gemini sometimes answers 500/503 ("overloaded") within seconds. Retry once,
+                # but only if there is still time left inside the request budget.
+                if getattr(exc, "code", None) in RETRYABLE_CODES and time.monotonic() - started < RETRY_WINDOW_SECONDS:
+                    logger.info("Gemini API error %s; retrying once", exc.code)
+                    time.sleep(RETRY_DELAY_SECONDS)
+                    response = client.models.generate_content(model=self.model, contents=prompt, config=config)
+                else:
+                    raise
         except errors.APIError as exc:
             code = getattr(exc, "code", None)
             logger.warning("Gemini API error %s (%s)", code, type(exc).__name__)

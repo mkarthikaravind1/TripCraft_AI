@@ -1,4 +1,5 @@
 import json
+from unittest import mock
 from decimal import Decimal
 
 from django.test import SimpleTestCase
@@ -94,3 +95,43 @@ class GeneratePlanTests(SimpleTestCase):
     def test_missing_key_is_unavailable(self):
         with self.assertRaises(AIUnavailable):
             GeminiProvider(api_key="").generate("hello")
+
+
+class GeminiRetryTests(SimpleTestCase):
+    """The real provider class with the SDK client mocked out (no network, no quota)."""
+
+    def provider_with(self, side_effect):
+        client = mock.Mock()
+        client.models.generate_content.side_effect = side_effect
+        patcher = mock.patch("google.genai.Client", return_value=client)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        mock.patch("planner.services.ai.RETRY_DELAY_SECONDS", 0).start()
+        self.addCleanup(mock.patch.stopall)
+        return GeminiProvider(api_key="test-key", model="test-model"), client
+
+    def overloaded(self):
+        from google.genai import errors
+
+        return errors.ServerError(503, {"error": {"code": 503, "message": "overloaded", "status": "UNAVAILABLE"}})
+
+    def test_quick_503_is_retried_once(self):
+        provider, client = self.provider_with([self.overloaded(), mock.Mock(text='{"ok": true}')])
+        self.assertEqual(provider.generate("hi"), '{"ok": true}')
+        self.assertEqual(client.models.generate_content.call_count, 2)
+
+    def test_repeated_503_becomes_unavailable(self):
+        provider, client = self.provider_with([self.overloaded(), self.overloaded()])
+        with self.assertRaises(AIUnavailable):
+            provider.generate("hi")
+        self.assertEqual(client.models.generate_content.call_count, 2)
+
+    def test_rate_limit_is_not_retried(self):
+        from google.genai import errors
+
+        limited = errors.ClientError(429, {"error": {"code": 429, "message": "quota", "status": "RESOURCE_EXHAUSTED"}})
+        provider, client = self.provider_with([limited])
+        with self.assertRaises(AIUnavailable) as ctx:
+            provider.generate("hi")
+        self.assertIn("rate-limited", ctx.exception.reason)
+        self.assertEqual(client.models.generate_content.call_count, 1)
