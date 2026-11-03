@@ -151,14 +151,13 @@ def ticket_api(request, reference):
     data = _payload(request)
     if data is None:
         return error_response(request, "400", message="Invalid JSON.")
-    if "status" in data:
-        try:
-            tickets.set_status(ticket, data["status"])
-        except ValueError:
-            return error_response(request, "400", message="Status can only be set to OPEN or RESOLVED.")
+    if "status" in data and data["status"] not in {SupportTicket.Status.OPEN, SupportTicket.Status.RESOLVED}:
+        return error_response(request, "400", message="Status can only be set to OPEN or RESOLVED.")
     if any(k in data for k in tickets.EDITABLE_FIELDS):
         form = _validated(data, ticket)
         if not form.is_valid():
             return _form_errors(form)
         tickets.update_ticket(ticket, form.cleaned_data)
+    if "status" in data:  # applied last, so an explicit status wins over the re-open-on-edit rule
+        tickets.set_status(ticket, data["status"])
     return JsonResponse({"ok": True, "ticket": serialize_ticket(ticket)})

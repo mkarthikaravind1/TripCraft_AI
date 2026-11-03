@@ -101,6 +101,8 @@ class TicketCRUDTests(TestCase):
         db = SupportTicket.objects.get(reference=ticket["reference"])
         self.assertEqual(db.description, "Still empty after a reload on mobile.")
         self.assertEqual(db.subject, "Weather card empty")  # untouched fields kept
+        self.assertEqual(db.status, "RESOLVED")  # explicit status wins when sent with an edit
+        self.assertEqual(updated.json()["ticket"]["status"], "RESOLVED")
 
         deleted = send(self.client, "delete", url)  # Delete
         self.assertEqual(deleted.status_code, 200)
