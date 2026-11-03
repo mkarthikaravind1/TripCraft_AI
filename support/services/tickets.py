@@ -45,15 +45,84 @@ def create_ticket(request, cleaned, channel, conversation_id=""):
     else:
         raise TicketCreationError("could not allocate a ticket reference")
 
-    refs = [r for r in request.session.get(SESSION_KEY, []) if r != ticket.reference]
-    request.session[SESSION_KEY] = ([ticket.reference] + refs)[:20]
+    remember(request, ticket)
     return ticket
 
 
+def remember(request, ticket):
+    """Grant this browser session access to a ticket (its creator, or after an email-verified lookup)."""
+    refs = [r for r in request.session.get(SESSION_KEY, []) if r != ticket.reference]
+    request.session[SESSION_KEY] = ([ticket.reference] + refs)[:20]
+
+
+def forget(request, ticket):
+    request.session[SESSION_KEY] = [r for r in request.session.get(SESSION_KEY, []) if r != ticket.reference]
+
+
 def access_status(request, ticket):
-    """HTTP-style status for viewing a ticket: 200 allowed, 401 log in needed, 403 other account, 404 hidden."""
+    """HTTP-style status for a ticket: 200 allowed, 401 log in needed, 403 other account, 404 hidden."""
+    if ticket.reference in request.session.get(SESSION_KEY, []):
+        return 200
     if ticket.user_id is not None:
         if not request.user.is_authenticated:
             return 401
         return 200 if request.user.id == ticket.user_id else 403
-    return 200 if ticket.reference in request.session.get(SESSION_KEY, []) else 404
+    return 404
+
+
+def visible_tickets(request):
+    """Tickets this visitor may see: their account's tickets plus those remembered in this session."""
+    from django.db.models import Q
+
+    refs = request.session.get(SESSION_KEY, [])
+    query = Q(reference__in=refs)
+    if request.user.is_authenticated:
+        query |= Q(user=request.user)
+    return SupportTicket.objects.filter(query).order_by("-created_at")[:20]
+
+
+def lookup(request, reference, email):
+    """Find a ticket by reference + the email used on it.
+
+    Returns (status, ticket): 401 no email given, 404 unknown reference,
+    403 email doesn't match (or the ticket has no email), 200 found.
+    """
+    reference = (reference or "").strip().upper()
+    email = (email or "").strip().lower()
+    if not email:
+        return 401, None
+    ticket = SupportTicket.objects.filter(reference=reference).first()
+    if ticket is None:
+        return 404, None
+    if not ticket.contact_email or ticket.contact_email.lower() != email:
+        return 403, None
+    remember(request, ticket)
+    return 200, ticket
+
+
+EDITABLE_FIELDS = ("subject", "description", "error_code", "contact_email")
+
+
+def update_ticket(ticket, cleaned):
+    """Update the traveller-editable fields. Resolved tickets are re-opened when edited."""
+    for name in EDITABLE_FIELDS:
+        if name in cleaned:
+            setattr(ticket, name, cleaned[name] or "")
+    if ticket.status == SupportTicket.Status.RESOLVED:
+        ticket.status = SupportTicket.Status.OPEN
+    ticket.save()
+    return ticket
+
+
+def set_status(ticket, status):
+    """Travellers may close (resolve) or re-open their own ticket; other statuses are for staff."""
+    if status not in {SupportTicket.Status.OPEN, SupportTicket.Status.RESOLVED}:
+        raise ValueError("status must be OPEN or RESOLVED")
+    ticket.status = status
+    ticket.save(update_fields=["status", "updated_at"])
+    return ticket
+
+
+def delete_ticket(request, ticket):
+    forget(request, ticket)
+    ticket.delete()

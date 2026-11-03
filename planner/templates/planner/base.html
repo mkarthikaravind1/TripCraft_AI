@@ -53,6 +53,7 @@
       <nav id="nav-menu" class="nav-menu" aria-label="Main">
         <a href="{% url 'planner:home' %}#how-it-works">How it works</a>
         <a href="{% url 'support:faq' %}"{% if request.resolver_match.url_name == 'faq' %} aria-current="page"{% endif %}>Help &amp; FAQ</a>
+        <a href="{% url 'support:support' %}"{% if request.resolver_match.url_name == 'support' %} aria-current="page"{% endif %}>Support</a>
         <a href="{% url 'planner:my_trips' %}"{% if request.resolver_match.url_name == 'my_trips' %} aria-current="page"{% endif %}>My trips</a>
         {% if user.is_authenticated %}
           <form method="post" action="{% url 'logout' %}" class="nav-logout">
@@ -97,7 +98,7 @@
           <li><a href="{% url 'planner:home' %}#features">Features</a></li>
           <li><a href="{% url 'planner:home' %}#how-it-works">How it works</a></li>
           <li><a href="{% url 'support:faq' %}">Help &amp; FAQ</a></li>
-          <li><a href="{% url 'support:faq' %}#contact-support">Contact support</a></li>
+          <li><a href="{% url 'support:support' %}">Support &amp; tickets</a></li>
         </ul>
       </nav>
       <div>

@@ -23,7 +23,7 @@ def wants_json(request):
     return (
         request.content_type == "application/json"
         or "application/json" in request.headers.get("Accept", "")
-        or request.path.startswith(("/support/chat/", "/health/"))
+        or request.path.startswith(("/support/chat/", "/health/", "/api/"))
     )
 
 

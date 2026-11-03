@@ -9,18 +9,51 @@
       <h1>{{ ticket.reference }}</h1>
       <p class="ticket-status">
         <span class="status-pill status-{{ ticket.status|lower }}">{{ ticket.get_status_display }}</span>
-        <span class="muted small">Priority: {{ ticket.get_priority_display }} · Created {{ ticket.created_at|date:"j M Y, H:i" }} · Via {{ ticket.get_channel_display }}</span>
+        <span class="muted small">Priority: {{ ticket.get_priority_display }} · Created {{ ticket.created_at|date:"j M Y, H:i" }} · Updated {{ ticket.updated_at|date:"j M Y, H:i" }} · Via {{ ticket.get_channel_display }}</span>
       </p>
       <dl class="ticket-fields">
         <div><dt>Subject</dt><dd>{{ ticket.subject }}</dd></div>
         <div><dt>Description</dt><dd>{{ ticket.description|linebreaksbr }}</dd></div>
         {% if ticket.error_code %}<div><dt>Error code</dt><dd>{{ ticket.error_code }}{% if error %} — {{ error.title }}{% endif %}</dd></div>{% endif %}
-        <div><dt>Reply by email</dt><dd>{% if ticket.contact_email %}Requested ({{ ticket.contact_email }}){% else %}Not requested{% endif %}</dd></div>
+        <div><dt>Email</dt><dd>{% if ticket.contact_email %}{{ ticket.contact_email }}{% else %}Not given{% endif %}</dd></div>
       </dl>
-      <p class="small muted">No email has been sent automatically. Keep this reference — the support team reviews tickets in the TripCraft admin dashboard.</p>
+      <p class="small muted">No email has been sent automatically. The support team reviews tickets in the TripCraft admin dashboard.</p>
+
+      <details class="ticket-edit"{% if editing %} open{% endif %}>
+        <summary class="btn btn-outline btn-sm">Edit ticket</summary>
+        <form method="post" action="{% url 'support:ticket_detail' ticket.reference %}" novalidate>
+          {% csrf_token %}
+          {% if edit_form.errors %}<p class="notice notice-error" role="alert">Please fix the highlighted fields.</p>{% endif %}
+          {% include "planner/partials/field.html" with field=edit_form.subject %}
+          {% include "planner/partials/field.html" with field=edit_form.description %}
+          <div class="field-row">
+            {% include "planner/partials/field.html" with field=edit_form.error_code %}
+            {% include "planner/partials/field.html" with field=edit_form.contact_email %}
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+        </form>
+      </details>
+
+      <div class="ticket-actions">
+        <form method="post" action="{% url 'support:ticket_status' ticket.reference %}">
+          {% csrf_token %}
+          {% if ticket.status == "RESOLVED" %}
+            <input type="hidden" name="status" value="OPEN">
+            <button type="submit" class="btn btn-ghost btn-sm">Re-open ticket</button>
+          {% else %}
+            <input type="hidden" name="status" value="RESOLVED">
+            <button type="submit" class="btn btn-ghost btn-sm">Mark as resolved</button>
+          {% endif %}
+        </form>
+        <form method="post" action="{% url 'support:ticket_delete' ticket.reference %}" data-confirm="Delete ticket {{ ticket.reference }} permanently?">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ghost btn-sm text-danger">Delete ticket</button>
+        </form>
+      </div>
+
       <div class="hero-actions">
-        <a class="btn btn-primary" href="{% url 'support:faq' %}">Back to help centre</a>
-        <a class="btn btn-ghost" href="{% url 'planner:plan' %}">Plan a trip</a>
+        <a class="btn btn-primary" href="{% url 'support:support' %}">All my tickets</a>
+        <a class="btn btn-ghost" href="{% url 'support:faq' %}">Help centre</a>
       </div>
     </div>
   </div>

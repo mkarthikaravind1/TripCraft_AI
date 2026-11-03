@@ -95,7 +95,7 @@ class FAQTests(TestCase):
 
 
 # ------------------------------------------------------------ error codes
-class ErrorRegistryTests(SimpleTestCase):
+class ErrorRegistryTests(TestCase):
     def test_all_required_codes_exist_and_are_documented(self):
         self.assertEqual(len(errors.REQUIRED_CODES), 8)
         for code in ["400", "401", "403", "404", "429", "500", "503", "TRIPCRAFT_001"]:

@@ -1,0 +1,66 @@
+{% extends "planner/base.html" %}
+{% block title %}Support · TripCraft AI{% endblock %}
+{% block description %}Create a TripCraft AI support ticket, check its status, or update and close it.{% endblock %}
+{% block body_class %}page-support{% endblock %}
+
+{% block content %}
+<section class="faq-hero">
+  <div class="container faq-hero-inner">
+    <p class="eyebrow">Support</p>
+    <h1>We're here to help.</h1>
+    <p class="lead">Create a ticket and keep its reference. You can check, update, close or delete it any time.</p>
+    <div class="help-band-actions support-hero-actions">
+      <button type="button" class="btn btn-outline" data-open-chat>Ask the assistant first</button>
+      <a class="btn btn-ghost" href="{% url 'support:faq' %}">Browse the FAQs</a>
+    </div>
+  </div>
+</section>
+
+<section class="section support-section">
+  <div class="container support-grid">
+    <form class="card ticket-form" id="new-ticket" method="post" action="{% url 'support:create_ticket' %}" novalidate>
+      {% csrf_token %}
+      <h2 class="card-title">New ticket</h2>
+      {% if ticket_form.errors %}<p class="notice notice-error" role="alert">Please fix the highlighted fields.</p>{% endif %}
+      {% include "planner/partials/field.html" with field=ticket_form.subject %}
+      {% include "planner/partials/field.html" with field=ticket_form.description %}
+      <div class="field-row">
+        {% include "planner/partials/field.html" with field=ticket_form.error_code %}
+        {% include "planner/partials/field.html" with field=ticket_form.contact_email %}
+      </div>
+      <p class="hint">Add an email if you want to look the ticket up from another device. TripCraft doesn't send automatic emails.</p>
+      <button type="submit" class="btn btn-primary">Create ticket</button>
+    </form>
+
+    <div class="support-side">
+      <form class="card ticket-form" id="check-ticket" method="post" action="{% url 'support:lookup_ticket' %}" novalidate>
+        {% csrf_token %}
+        <h2 class="card-title">Check a ticket</h2>
+        {% include "planner/partials/field.html" with field=lookup_form.reference %}
+        {% include "planner/partials/field.html" with field=lookup_form.email %}
+        <button type="submit" class="btn btn-outline">Check status</button>
+        <p class="hint">Tickets created without an email open automatically in the browser that created them (see below).</p>
+      </form>
+
+      <div class="card">
+        <h2 class="card-title">Your tickets</h2>
+        {% if my_tickets %}
+          <ul class="my-tickets">
+            {% for t in my_tickets %}
+              <li>
+                <a href="{% url 'support:ticket_detail' t.reference %}">
+                  <span class="ticket-ref">{{ t.reference }}</span>
+                  <span class="ticket-subject">{{ t.subject }}</span>
+                </a>
+                <span class="status-pill status-{{ t.status|lower }}">{{ t.get_status_display }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted small">No tickets in this browser{% if user.is_authenticated %} or account{% endif %} yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import FAQ, SupportTicket
+from .models import FAQ, ErrorCode, SupportTicket
+
+
+@admin.register(ErrorCode)
+class ErrorCodeAdmin(admin.ModelAdmin):
+    list_display = ("code", "title", "http_status", "order", "is_active", "updated_at")
+    list_editable = ("order", "is_active")
+    search_fields = ("code", "title", "meaning")
 
 
 @admin.register(FAQ)

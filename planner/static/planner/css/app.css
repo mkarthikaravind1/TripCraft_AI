@@ -487,12 +487,15 @@ input[type="range"] { width: 100%; accent-color: var(--brand); height: 28px; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .footer-grid > div:last-child { grid-column: 1 / -1; }
 }
-@media (max-width: 760px) {
+/* Collapse the navigation into a menu button before the links start to wrap. */
+@media (max-width: 960px) {
   .nav-toggle { display: block; }
   .nav-menu { position: absolute; top: 68px; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 0; padding: 8px 20px 20px; background: var(--bg); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); display: none; }
   .nav-menu.is-open { display: flex; }
   .nav-menu > a:not(.btn), .nav-logout .link-button { padding: 12px 0; border-bottom: 1px solid var(--border); display: block; width: 100%; text-align: left; }
   .nav-menu .btn { margin-top: 14px; }
+}
+@media (max-width: 760px) {
   .stats { grid-template-columns: 1fr 1fr; }
   .stat-compact { grid-column: 1 / -1; }
   .budget-col { grid-template-columns: 1fr; }

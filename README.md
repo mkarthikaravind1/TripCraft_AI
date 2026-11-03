@@ -2,7 +2,7 @@
 
 > *Your journey, intelligently planned.*
 
-TripCraft AI is a full-stack Django web application that turns a destination, dates, budget, group size and interests into a personalised day-by-day itinerary using Google Gemini, with a deterministic budget optimiser, an interactive dashboard, destination weather, and an AI support assistant backed by an SQL FAQ database, a central error-code registry, SQL support tickets and MongoDB chat logs.
+TripCraft AI is a full-stack Django web application that turns a destination, dates, budget, group size and interests into a personalised day-by-day itinerary using Google Gemini, with a deterministic budget optimiser, an interactive dashboard, destination weather, and an AI support assistant backed by SQL FAQs and error codes served through a JSON API, full CRUD support tickets in SQL, and MongoDB chat logs.
 
 | | |
 |---|---|
@@ -36,9 +36,10 @@ Planning a trip means juggling many tabs: attractions, food, transport, and a bu
 - **Saved trips**: anonymous trips are kept in the browser session; optional accounts (username and password only) keep them permanently.
 
 **Help & support**
-- **FAQ & Help centre** (`/faq/`): 14 FAQs loaded from SQL, with live search, topic filters, an accessible accordion, the error-code guide and a ticket form.
+- **FAQ & Help centre** (`/faq/`): 14 FAQs stored in SQL and **loaded by the page from the JSON API `GET /api/faqs/`**, with live search, topic filters, an accessible accordion and the error-code guide. A `<noscript>` copy is rendered by the server for visitors without JavaScript.
+- **Error codes in SQL**: the 8 supported codes are rows in the `ErrorCode` table (seeded by migration 0004, editable in `/admin/`, served at `GET /api/error-codes/`).
 - **AI support assistant**: a floating widget on every page, including the 404 and 500 pages. It retrieves FAQs and error codes, answers with Gemini using only that context, falls back to verified help-centre text, and offers a support ticket when it can't answer.
-- **Support tickets** in SQL with references like `TC-ABCD2345`, created only after the user confirms.
+- **Support tickets with full CRUD** (`/support/`): create, check status by reference + email, view, edit, mark resolved/re-open, and delete. Available as pages and as a JSON API. Tickets are stored in SQL with references like `TC-ABCD2345`, and the assistant creates one only after the user confirms.
 - **Chat logs and feedback** in MongoDB (thumbs up/down).
 - **Custom error pages** for 400, 401, 403, 404, 429, 500 and 503, each with an "Ask the assistant" button.
 - **Request logging** middleware, **health endpoints** and **rate limiting** on AI operations.
@@ -89,7 +90,9 @@ planner/              travel planner app
 support/              help & support app
   models.py           FAQ, SupportTicket
   faq_data.py         FAQ content (seeded by migration 0002 and `seed_faqs`)
-  services/errors.py  central error-code registry
+  services/errors.py  error-code access (reads SQL; built-in seed/fallback definitions)
+  services/tickets.py ticket create / lookup / update / status / delete + access rules
+  views/api.py        JSON API (FAQs, error codes, ticket CRUD)
   services/retrieval.py  FAQ retrieval
   services/assistant.py  assistant pipeline
   services/mongo.py   MongoDB chat log + feedback
@@ -109,6 +112,7 @@ support/              help & support app
 | **Activity** | day FK, order, time_slot, name, description, duration, location, category, cost_per_person, is_completed, is_removed |
 | **Expense** | trip FK, category (transport/accommodation/misc, unique per trip), description, estimated_amount, source (AI/sample), user_amount (override) |
 | **FAQ** | question (unique), answer, category, keywords, order, is_active, created_at, updated_at |
+| **ErrorCode** | code (unique, e.g. `404`, `TRIPCRAFT_001`), http_status, title, meaning, causes (JSON list), user_action, troubleshooting (JSON list), where_seen, keywords (JSON list), order, is_active, created_at, updated_at |
 | **SupportTicket** | reference `TC-XXXXXXXX` (unique), optional user FK, session_key, optional contact_email, subject, description, error_code, status (OPEN/IN_PROGRESS/RESOLVED), priority, channel (assistant/help form), conversation_id, created_at, updated_at |
 
 ## 7. MongoDB storage design
@@ -139,7 +143,7 @@ Text is lower-cased and tokenised, stop words are removed, and words get light s
 
 ## 9. Error codes
 
-All codes live in `support/services/errors.py` and are used by the error pages, the help centre and the assistant.
+All codes are stored in the SQL `ErrorCode` table (seeded by migration `0004_seed_error_codes`, editable in Django admin) and read from there by the error pages, the help centre, the ticket form and the assistant. `support/services/errors.py` holds the seed definitions, which are also used as a fallback if the database itself is unavailable (for example while rendering a 500 or 503 page). `GET /api/error-codes/` returns them as JSON.
 
 | Code | Title | Where TripCraft produces it | What to do |
 |---|---|---|---|
@@ -152,15 +156,24 @@ All codes live in `support/services/errors.py` and are used by the error pages, 
 | 503 | Service Unavailable | `/health/ready/` when the DB is down; ticket creation when the DB write fails; feedback when MongoDB is unavailable | Retry later |
 | **TRIPCRAFT_001** | Live AI itinerary generation unavailable | Trip dashboard whenever a sample itinerary replaces live AI (no key, timeout, rate limit, invalid AI output) | Use the sample; "Try live AI again" |
 
-## 10. Support-ticket workflow
+## 10. Support tickets (CRUD) and JSON API
 
-1. The assistant offers a ticket, or the user asks for one, or uses the form on `/faq/#contact-support`.
-2. The widget shows a prefilled form (subject, description, error code, optional email). **Nothing is created until the user selects "Confirm & create ticket"**, and the API rejects requests without `confirm: true`.
-3. The server validates the data (subject ≥ 4 chars, description 10–2,000 chars, valid email if given).
-4. `SupportTicket` is saved in SQL with a unique `TC-` reference.
-5. The reference and link are returned **only after the database write succeeds**. On failure the API returns 503 with no reference.
-6. The outcome is logged to MongoDB (`resulted_in_ticket`, `ticket_reference`).
-7. `/support/tickets/<ref>/` is visible only to the creating browser session or the owning account (otherwise 404, 401 or 403). Staff manage tickets in Django admin (`/admin/`). **No emails are sent**, and the UI says so.
+| Operation | Page (`/support/`) | JSON API |
+|---|---|---|
+| **Create** | "New ticket" form; or the assistant after the user clicks *Confirm & create ticket* | `POST /api/tickets/` · `POST /support/chat/ticket/` (requires `confirm: true`) |
+| **Read** | `/support/tickets/<ref>/`; "Your tickets" list; "Check a ticket" by reference + email | `GET /api/tickets/<ref>/` · `POST /api/tickets/lookup/` |
+| **Update** | "Edit ticket" form; *Mark as resolved* / *Re-open* | `PATCH /api/tickets/<ref>/` (subject, description, error_code, contact_email, status OPEN/RESOLVED) |
+| **Delete** | *Delete ticket* (with confirmation) | `DELETE /api/tickets/<ref>/` |
+
+Other endpoints: `GET /api/faqs/` (optional `?q=` and `?category=`) and `GET /api/error-codes/`.
+
+Rules:
+1. All input is validated server-side (subject ≥ 4 chars, description 10–2,000 chars, valid optional email). Write requests need Django's CSRF token.
+2. A ticket reference is returned **only after the database write succeeds**; on failure the API returns 503.
+3. **Access**: the browser that created a ticket and the owning account can read, edit and delete it. Others get **404** (unknown or hidden), **401** (an account's ticket while logged out, or a lookup without an email) or **403** (another account, or a wrong email in a lookup). Lookups are rate-limited (10 per minute, 429).
+4. Travellers can only set the status to OPEN or RESOLVED; editing a resolved ticket re-opens it. Staff manage all statuses and priorities in Django admin (`/admin/`).
+5. Assistant-created tickets are logged in MongoDB (`resulted_in_ticket`, `ticket_reference`).
+6. **No emails are sent**, and the UI says so.
 
 ## 11. Weather integration (Open-Meteo)
 
@@ -239,13 +252,15 @@ Open http://127.0.0.1:8000. Without `GEMINI_API_KEY` the app runs in clearly lab
 python manage.py test
 ```
 
-The suite has 82 tests. AI, weather and MongoDB are mocked (an injected fake database), so no API keys or quota are needed. One test uses the real PyMongo driver against an unreachable address to check graceful failure. Coverage includes:
+The suite has 104 tests. AI, weather and MongoDB are mocked (an injected fake database), so no API keys or quota are needed. One test uses the real PyMongo driver against an unreachable address to check graceful failure. Coverage includes:
 - The home, plan and FAQ pages, including the widget on each.
 - FAQs seeded (≥ 10) and read from SQL, and the seed command's idempotency.
 - Chat endpoint responses, 400s, 405s, CSRF 403, and the rate limit 429.
 - FAQ-grounded AI prompts and the deterministic fallback.
 - 404, 500 and TRIPCRAFT_001 explanations, and all eight codes being present in the registry.
 - Unanswerable questions offering a ticket, confirmed tickets stored in SQL, and no reference returned on DB failure.
+- Full ticket CRUD through pages and API, lookup 401/403/404/429, and strangers blocked from reading, editing or deleting.
+- Error codes stored in SQL (edits reflected everywhere, built-in fallback when the DB fails) and the `/api/faqs/` and `/api/error-codes/` endpoints.
 - Ticket access returning 401, 403 and 404 for the wrong visitor.
 - MongoDB logging and feedback, plus their failure handling.
 - Weather timeouts, HTTP errors, malformed data and out-of-range dates.
@@ -298,7 +313,7 @@ Further checks: `python manage.py check --deploy` (with production variables) an
 
 ## 19. Proposed future improvement
 
-**Ticket follow-up with email notifications and a "My support tickets" page**: send confirmation and status-change emails through a transactional email provider such as SendGrid, configured via environment variables, and let signed-in users track all their tickets in one place. This would close the support loop without users needing to keep their ticket reference.
+**Email notifications for support tickets**: send a confirmation when a ticket is created and an update whenever staff change its status, through a transactional email provider such as SendGrid configured with environment variables. This would close the support loop without travellers needing to revisit the site to check their ticket.
 
 ## 20. Credits
 

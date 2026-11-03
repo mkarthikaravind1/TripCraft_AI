@@ -155,6 +155,7 @@ WEATHER_TIMEOUT_SECONDS = float(os.environ.get("WEATHER_TIMEOUT_SECONDS", "4"))
 RATE_LIMITS = {
     "generate": (int(os.environ.get("RATE_LIMIT_GENERATE", "6")), 600),
     "chat": (int(os.environ.get("RATE_LIMIT_CHAT", "20")), 60),
+    "lookup": (int(os.environ.get("RATE_LIMIT_LOOKUP", "10")), 60),
 }
 # Render terminates TLS at a proxy that sets X-Forwarded-For.
 TRUST_X_FORWARDED_FOR = env_bool("TRUST_X_FORWARDED_FOR", default=bool(RENDER_EXTERNAL_HOSTNAME))

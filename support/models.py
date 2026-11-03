@@ -39,6 +39,30 @@ class FAQ(models.Model):
         return self.question
 
 
+class ErrorCode(models.Model):
+    """A supported error code. Read by the error pages, the help centre and the assistant."""
+
+    code = models.CharField(max_length=20, unique=True)
+    http_status = models.PositiveSmallIntegerField(help_text="HTTP status sent with this error (200 for app-level codes).")
+    title = models.CharField(max_length=80)
+    meaning = models.TextField()
+    causes = models.JSONField(default=list, help_text="List of common causes.")
+    user_action = models.TextField(help_text="What the user should do.")
+    troubleshooting = models.JSONField(default=list, help_text="List of troubleshooting steps.")
+    where_seen = models.TextField(help_text="Where TripCraft produces this code.")
+    keywords = models.JSONField(default=list, blank=True, help_text="Phrases the assistant uses to recognise it.")
+    order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order", "code"]
+
+    def __str__(self):
+        return f"{self.code} — {self.title}"
+
+
 class SupportTicket(models.Model):
     class Status(models.TextChoices):
         OPEN = "OPEN", "Open"

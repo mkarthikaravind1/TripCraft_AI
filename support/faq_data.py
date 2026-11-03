@@ -114,9 +114,10 @@ FAQS = [
         "category": "support",
         "keywords": "contact support help ticket human team report problem email",
         "answer": (
-            "Ask the assistant first — if it cannot answer, it will offer to create a support ticket. You can also use "
-            "the support form at the bottom of the help centre. Each ticket gets a reference such as TC-ABCD2345. An "
-            "email address is optional, and TripCraft does not currently send emails automatically."
+            "Ask the assistant first — if it cannot answer, it will offer to create a support ticket. You can also open "
+            "the Support page to create a ticket, check one with its reference and email, and edit, close or delete it. "
+            "Each ticket gets a reference such as TC-ABCD2345. An email address is optional, and TripCraft does not "
+            "currently send emails automatically."
         ),
     },
     {

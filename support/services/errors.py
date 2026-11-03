@@ -1,12 +1,20 @@
 """
-Central error-code registry.
+Error-code registry.
 
-The single source of truth for every error code TripCraft AI can show. Used by
-the custom error pages, the FAQ/help centre and the support assistant.
+Error codes are stored in SQL (support.models.ErrorCode, seeded by migration
+0004 from DEFAULTS below) and read from there by the error pages, the help
+centre and the assistant. DEFAULTS doubles as a safety net: if the database
+itself is unavailable (for example while showing a 500 or 503 page), the
+built-in definitions are used instead.
 """
 
+import logging
 import re
 from dataclasses import dataclass, field
+
+from django.db import DatabaseError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -18,13 +26,13 @@ class ErrorCode:
     causes: tuple
     user_action: str
     troubleshooting: tuple
-    where: str  # where this code is produced in TripCraft AI
+    where_seen: str  # where this code is produced in TripCraft AI
     keywords: tuple = field(default_factory=tuple)
 
 
 TRIPCRAFT_AI_UNAVAILABLE = "TRIPCRAFT_001"
 
-REGISTRY = {
+DEFAULTS = {
     "400": ErrorCode(
         code="400", http_status=400, title="Bad Request",
         meaning="The server could not process the request because something in it was invalid or malformed.",
@@ -34,7 +42,7 @@ REGISTRY = {
         user_action="Check the information you entered and try again.",
         troubleshooting=("Reload the page and resubmit.", "Make sure dates, budget and traveller numbers are valid.",
                          "Keep chat messages under 1,000 characters."),
-        where="Returned by the dashboard, chat and ticket endpoints when they receive invalid data.",
+        where_seen="Returned by the dashboard, chat and ticket endpoints when they receive invalid data.",
         keywords=("bad request", "invalid request", "malformed"),
     ),
     "401": ErrorCode(
@@ -44,7 +52,7 @@ REGISTRY = {
                 "Your session expired."),
         user_action="Log in to the account that owns the resource, then try again.",
         troubleshooting=("Use the Log in link in the navigation bar.", "If you have no account, plan trips without one — sign-up is optional."),
-        where="Returned when a signed-in user's support ticket is opened without logging in.",
+        where_seen="Returned when a signed-in user's support ticket is opened without logging in.",
         keywords=("unauthorized", "unauthorised", "not logged in", "login required", "authentication"),
     ),
     "403": ErrorCode(
@@ -54,7 +62,7 @@ REGISTRY = {
                 "The security (CSRF) check failed, often because the page was open for a long time or cookies are blocked."),
         user_action="Reload the page and try again. Make sure cookies are enabled for this site.",
         troubleshooting=("Refresh the page to get a new security token.", "Log in with the account that owns the resource."),
-        where="Returned for another account's ticket and for failed CSRF checks.",
+        where_seen="Returned for another account's ticket and for failed CSRF checks.",
         keywords=("forbidden", "permission", "csrf", "not allowed", "access denied"),
     ),
     "404": ErrorCode(
@@ -66,7 +74,7 @@ REGISTRY = {
         user_action="Check the address, or go to My trips or the homepage.",
         troubleshooting=("Open My trips to see trips saved in this browser or account.",
                          "Log in if you saved the trip to an account."),
-        where="Returned for unknown URLs and for trips or tickets you do not own.",
+        where_seen="Returned for unknown URLs and for trips or tickets you do not own.",
         keywords=("not found", "page not found", "missing page", "broken link"),
     ),
     "429": ErrorCode(
@@ -76,7 +84,7 @@ REGISTRY = {
         user_action="Wait about a minute, then try again.",
         troubleshooting=("AI itinerary generation is limited to a few requests every 10 minutes per visitor.",
                          "The assistant accepts around 20 messages per minute."),
-        where="Returned by itinerary generation, regeneration and the assistant when rate limits are exceeded.",
+        where_seen="Returned by itinerary generation, regeneration and the assistant when rate limits are exceeded.",
         keywords=("too many requests", "rate limit", "rate limited", "slow down"),
     ),
     "500": ErrorCode(
@@ -86,7 +94,7 @@ REGISTRY = {
         user_action="Try again in a moment. If it keeps happening, create a support ticket describing what you were doing.",
         troubleshooting=("Reload the page.", "Go back to the homepage and retry the action.",
                          "Create a support ticket so the team can investigate."),
-        where="Shown by the custom error page for any unexpected server error. Technical details are never shown.",
+        where_seen="Shown by the custom error page for any unexpected server error. Technical details are never shown.",
         keywords=("internal server error", "server error", "something went wrong"),
     ),
     "503": ErrorCode(
@@ -96,7 +104,7 @@ REGISTRY = {
                 "The site is restarting or under maintenance (on free hosting it may be waking up)."),
         user_action="Wait a minute and try again.",
         troubleshooting=("Reload after 30–60 seconds.", "Check /health/ready/ — it reports whether the database is reachable."),
-        where="Returned by the readiness check and by support features when the database cannot be reached.",
+        where_seen="Returned by the readiness check and by support features when the database cannot be reached.",
         keywords=("service unavailable", "maintenance", "site is down", "website is down"),
     ),
     TRIPCRAFT_AI_UNAVAILABLE: ErrorCode(
@@ -109,7 +117,7 @@ REGISTRY = {
         user_action="Your sample plan and budget tools still work. Use “Try live AI again” on the trip dashboard to retry.",
         troubleshooting=("Wait a minute and retry — temporary AI rate limits usually clear quickly.",
                          "If it keeps happening, create a support ticket and include the code TRIPCRAFT_001."),
-        where="Shown on the trip dashboard whenever a sample itinerary is used instead of live AI.",
+        where_seen="Shown on the trip dashboard whenever a sample itinerary is used instead of live AI.",
         keywords=("itinerary generation fails", "itinerary generation failed", "ai unavailable", "sample itinerary",
                   "generation fails", "generation failed", "ai failed", "not ai generated", "fallback"),
     ),
@@ -117,37 +125,61 @@ REGISTRY = {
 
 REQUIRED_CODES = ("400", "401", "403", "404", "429", "500", "503", TRIPCRAFT_AI_UNAVAILABLE)
 
-_CODE_RE = re.compile(r"\b(?:error\s*|code\s*|status\s*)?(400|401|403|404|429|500|503)\b", re.IGNORECASE)
+_CODE_RE = re.compile(r"\b(?:error\s*|code\s*|status\s*)?(\d{3})\b", re.IGNORECASE)
 _TC_RE = re.compile(r"\bTRIP\s*CRAFT[\s_-]*0*1\b|\bTC[_-]?001\b", re.IGNORECASE)
 _TICKET_RE = re.compile(r"\bTC-[A-Z0-9]{8}\b")
 
 
+def _from_db():
+    """Active codes from SQL as {code: ErrorCode model}, or None if the database can't be read."""
+    from support.models import ErrorCode as ErrorCodeModel
+
+    try:
+        return {e.code: e for e in ErrorCodeModel.objects.filter(is_active=True)}
+    except DatabaseError as exc:
+        logger.warning("Error codes could not be read from the database (%s); using built-in definitions.",
+                       type(exc).__name__)
+        return None
+
+
+def registry():
+    """All active error codes, keyed by code. SQL first; built-in definitions if SQL is unavailable."""
+    codes = _from_db()
+    return codes if codes else dict(DEFAULTS)
+
+
 def get(code):
-    return REGISTRY.get(str(code).upper())
+    code = str(code or "").upper()
+    return registry().get(code) or DEFAULTS.get(code)
 
 
 def all_codes():
-    return [REGISTRY[c] for c in REQUIRED_CODES]
+    codes = registry()
+    ordered = [codes[c] for c in REQUIRED_CODES if c in codes]
+    return ordered + sorted((e for c, e in codes.items() if c not in REQUIRED_CODES), key=lambda e: e.code)
 
 
 def detect(text):
     """Return the error codes mentioned in a message (explicitly or by well-known phrase)."""
     if not text:
         return []
+    codes = registry()
     cleaned = _TICKET_RE.sub(" ", text)  # don't mistake ticket references for codes
     found = []
-    if _TC_RE.search(cleaned):
+    if _TC_RE.search(cleaned) and TRIPCRAFT_AI_UNAVAILABLE in codes:
         found.append(TRIPCRAFT_AI_UNAVAILABLE)
     for match in _CODE_RE.finditer(cleaned):
         # Avoid matching amounts like "500 rupees" unless the word "error"/"code" or the title is near.
         code = match.group(1)
+        entry = codes.get(code)
+        if entry is None:
+            continue
         window = cleaned[max(0, match.start() - 25): match.end() + 25].lower()
-        entry = REGISTRY[code]
         if any(w in window for w in ("error", "code", "status", "http", "page")) or entry.title.lower() in cleaned.lower():
             if code not in found:
                 found.append(code)
     lowered = cleaned.lower()
-    for entry in REGISTRY.values():
+    for entry in codes.values():
         if entry.code not in found and any(re.search(rf"\b{re.escape(k)}\b", lowered) for k in entry.keywords):
             found.append(entry.code)
     return found[:3]

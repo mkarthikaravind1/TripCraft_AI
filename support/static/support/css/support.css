@@ -163,3 +163,26 @@
   .chat-ticket-row { grid-template-columns: 1fr; }
 }
 @media print { .chat, .weather-card { display: none !important; } }
+
+/* ---------- Support page & ticket CRUD ---------- */
+.support-hero-actions { justify-content: center; margin-top: 18px; }
+.support-section { padding-top: 32px; }
+.support-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.support-side { display: grid; gap: 24px; }
+.ticket-form .card-title { margin-bottom: 14px; }
+.my-tickets { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.my-tickets li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.my-tickets a { display: grid; min-width: 0; text-decoration: none; color: var(--ink); }
+.my-tickets a:hover .ticket-subject { color: var(--brand); }
+.ticket-ref { font: 600 .82rem/1.3 ui-monospace, Consolas, monospace; color: var(--brand); }
+.ticket-subject { font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ticket-edit { margin: 8px 0 16px; }
+.ticket-edit > summary { list-style: none; display: inline-flex; }
+.ticket-edit > summary::-webkit-details-marker { display: none; }
+.ticket-edit form { margin-top: 16px; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
+.ticket-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+.ticket-actions form { margin: 0; }
+.faq-skeleton { display: grid; gap: 10px; }
+.faq-skeleton span { display: block; height: 58px; border-radius: var(--radius); background: linear-gradient(90deg, var(--surface-2), var(--sage-50), var(--surface-2)); background-size: 200% 100%; animation: shimmer 1.4s infinite linear; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (max-width: 920px) { .support-grid { grid-template-columns: 1fr; } }
