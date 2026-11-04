@@ -237,6 +237,7 @@ Open http://127.0.0.1:8000. Without `GEMINI_API_KEY` the app runs in clearly lab
 | `WEATHER_TIMEOUT_SECONDS` | No | Default 4 |
 | `RATE_LIMIT_GENERATE`, `RATE_LIMIT_CHAT` | No | Defaults 6 per 10 min, 20 per min |
 | `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS` | No | Production HTTPS tuning |
+| `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_PASSWORD` | Optional | Admin login for `/admin/`; created or updated by `ensure_admin` on each Render build (password ≥ 12 chars) |
 
 ### MongoDB Atlas setup
 
@@ -290,7 +291,7 @@ Further checks: `python manage.py check --deploy` (with production variables) an
    - `/does-not-exist/` shows the custom 404.
    - `/health/` and `/health/ready/` return `ok`.
    - Plan a trip and ask the assistant a question.
-   - Create a ticket, then check it in `/admin/` (use the Render Shell to run `python manage.py createsuperuser`).
+   - Create a ticket, then check it in `/admin/` (set `DJANGO_SUPERUSER_USERNAME` and `DJANGO_SUPERUSER_PASSWORD` in Render, then redeploy; the build creates the admin).
    - Confirm MongoDB documents arrive.
 
    Only then add the URL at the top of this README.
