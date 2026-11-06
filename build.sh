@@ -7,4 +7,5 @@ pip install -r requirements.txt
 python manage.py collectstatic --no-input
 python manage.py migrate --no-input
 python manage.py seed_faqs
+python manage.py seed_sample_users
 python manage.py ensure_admin

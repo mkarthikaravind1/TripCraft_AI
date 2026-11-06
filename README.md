@@ -33,7 +33,8 @@ Planning a trip means juggling many tabs: attractions, food, transport, and a bu
 - **Smart budget optimiser**: integer-exact calculations in Python (`planner/services/budget.py`) mirrored in JavaScript (`budget.js`), with a test that proves both give identical numbers. It covers meal and stay styles, user-entered transport and extras figures, a 0–30% contingency, and a "trim paid activities" preview that shows the savings before you apply it.
 - **Interactive dashboard**: day tabs, expandable activity cards, mark done / remove / restore, live totals, a doughnut chart by category and a stacked daily bar chart (Chart.js), plus a print/PDF layout.
 - **Weather** (third-party API): Open-Meteo forecast for the trip dates, loaded asynchronously, with a timeout and fallback.
-- **Saved trips**: anonymous trips are kept in the browser session; optional accounts (username and password only) keep them permanently.
+- **User registration** (`/accounts/signup/`): full name, email (unique), username and password, plus travel preferences (home city, preferred currency, usual pace) stored in a `UserProfile` table. Preferences pre-fill the trip planner. Registration is optional.
+- **Saved trips**: anonymous trips are kept in the browser session; registered users keep them permanently under My trips.
 
 **Help & support**
 - **FAQ & Help centre** (`/faq/`): 14 FAQs stored in SQL and **loaded by the page from the JSON API `GET /api/faqs/`**, with live search, topic filters, an accessible accordion and the error-code guide. A `<noscript>` copy is rendered by the server for visitors without JavaScript.
@@ -111,6 +112,7 @@ support/              help & support app
 | **ItineraryDay** | trip FK, day_number (unique per trip), date, title, summary, notes, meals (JSON), estimated_cost |
 | **Activity** | day FK, order, time_slot, name, description, duration, location, category, cost_per_person, is_completed, is_removed |
 | **Expense** | trip FK, category (transport/accommodation/misc, unique per trip), description, estimated_amount, source (AI/sample), user_amount (override) |
+| **User** (Django) + **UserProfile** | username (unique), email, first/last name, hashed password · profile: one-to-one user, full_name, home_city, preferred_currency, travel_pace, is_sample, created_at, updated_at |
 | **FAQ** | question (unique), answer, category, keywords, order, is_active, created_at, updated_at |
 | **ErrorCode** | code (unique, e.g. `404`, `TRIPCRAFT_001`), http_status, title, meaning, causes (JSON list), user_action, troubleshooting (JSON list), where_seen, keywords (JSON list), order, is_active, created_at, updated_at |
 | **SupportTicket** | reference `TC-XXXXXXXX` (unique), optional user FK, session_key, optional contact_email, subject, description, error_code, status (OPEN/IN_PROGRESS/RESOLVED), priority, channel (assistant/help form), conversation_id, created_at, updated_at |
@@ -237,6 +239,7 @@ Open http://127.0.0.1:8000. Without `GEMINI_API_KEY` the app runs in clearly lab
 | `WEATHER_TIMEOUT_SECONDS` | No | Default 4 |
 | `RATE_LIMIT_GENERATE`, `RATE_LIMIT_CHAT` | No | Defaults 6 per 10 min, 20 per min |
 | `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS` | No | Production HTTPS tuning |
+| — | — | `python manage.py seed_sample_users` adds 5 demo registrations (`sample_*`, `@example.com`, login disabled); the Render build runs it |
 | `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_PASSWORD` | Optional | Admin login for `/admin/`; created or updated by `ensure_admin` on each Render build (password ≥ 12 chars) |
 
 ### MongoDB Atlas setup
@@ -253,7 +256,7 @@ Open http://127.0.0.1:8000. Without `GEMINI_API_KEY` the app runs in clearly lab
 python manage.py test
 ```
 
-The suite has 104 tests. AI, weather and MongoDB are mocked (an injected fake database), so no API keys or quota are needed. One test uses the real PyMongo driver against an unreachable address to check graceful failure. Coverage includes:
+The suite has 112 tests. AI, weather and MongoDB are mocked (an injected fake database), so no API keys or quota are needed. One test uses the real PyMongo driver against an unreachable address to check graceful failure. Coverage includes:
 - The home, plan and FAQ pages, including the widget on each.
 - FAQs seeded (≥ 10) and read from SQL, and the seed command's idempotency.
 - Chat endpoint responses, 400s, 405s, CSRF 403, and the rate limit 429.

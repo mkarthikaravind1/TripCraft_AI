@@ -36,7 +36,11 @@ def plan_trip(request):
             return redirect("planner:trip_detail", trip_id=trip.id)
     else:
         start = timezone.localdate() + timedelta(days=14)
-        form = TripForm(initial={"start_date": start, "end_date": start + timedelta(days=3)})
+        initial = {"start_date": start, "end_date": start + timedelta(days=3)}
+        profile = getattr(request.user, "profile", None) if request.user.is_authenticated else None
+        if profile is not None:  # start from the traveller's saved preferences
+            initial.update(origin=profile.home_city, currency=profile.preferred_currency, pace=profile.travel_pace)
+        form = TripForm(initial=initial)
     return render(
         request,
         "planner/plan.html",

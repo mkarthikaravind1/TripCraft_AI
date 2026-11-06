@@ -32,7 +32,8 @@ FAQS = [
         "keywords": "account register sign up login required anonymous free",
         "answer": (
             "No. You can plan trips without an account — they are kept in your current browser session. If you sign up "
-            "(only a username and password are needed) or log in, trips planned in that browser are attached to your "
+            "(with your name, email, username and password, plus optional travel preferences) or log in, trips planned "
+            "in that browser are attached to your "
             "account so you can find them later under “My trips”."
         ),
     },
@@ -146,7 +147,8 @@ FAQS = [
         "keywords": "privacy data personal information stored store gdpr delete",
         "answer": (
             "TripCraft stores your trip preferences and itineraries, support tickets you create, and assistant "
-            "conversations and feedback (for improving help answers). Accounts need only a username and password. "
+            "conversations and feedback (for improving help answers). Accounts store your name, email, username, a "
+            "securely hashed password, and your home city, currency and pace preferences. "
             "You can delete any trip from its dashboard. Please don't share passwords or payment details in the chat."
         ),
     },

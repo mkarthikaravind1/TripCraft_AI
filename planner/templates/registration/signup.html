@@ -1,19 +1,56 @@
 {% extends "planner/base.html" %}
-{% block title %}Sign up · TripCraft AI{% endblock %}
+{% load static %}
+{% block title %}Create an account · TripCraft AI{% endblock %}
+{% block description %}Register for a free TripCraft AI account to keep your trips and travel preferences.{% endblock %}
 
 {% block content %}
-<section class="section auth-page">
-  <div class="container">
-    <form class="card auth-card" method="post" action="{% url 'signup' %}">
-      {% csrf_token %}
+<section class="section register-page">
+  <div class="container register-grid">
+    <aside class="register-aside">
       <p class="eyebrow">Free account</p>
-      <h1>Create your account</h1>
-      <p class="muted small">Only a username and password — no email or personal details required.</p>
-      {% for field in form %}
-        {% include "planner/partials/field.html" with field=field %}
-      {% endfor %}
-      <button type="submit" class="btn btn-primary btn-block">Sign up</button>
-      <p class="small muted">Already have an account? <a href="{% url 'login' %}">Log in</a>.</p>
+      <h1>Create your TripCraft account</h1>
+      <p class="muted">Save every trip you plan, and let TripCraft start new plans from your home city, currency and pace.</p>
+      <ul class="register-points">
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Trips planned in this browser move into your account</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Your preferences pre-fill the trip planner</li>
+        <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> No payment details, ever</li>
+      </ul>
+      <figure class="register-photo">
+        <img src="{% static 'planner/img/kyoto.jpg' %}" alt="Traditional wooden street in Kyoto at dusk with a pagoda" width="1100" height="733" loading="lazy" data-fallback>
+      </figure>
+    </aside>
+
+    <form class="card register-card" method="post" action="{% url 'signup' %}" novalidate>
+      {% csrf_token %}
+      {% if form.errors %}
+        <div class="notice notice-error" role="alert">
+          <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+          <p>Please fix the highlighted fields below.</p>
+        </div>
+      {% endif %}
+
+      <fieldset class="register-group">
+        <legend>Your account</legend>
+        {% include "planner/partials/field.html" with field=form.full_name %}
+        {% include "planner/partials/field.html" with field=form.email %}
+        {% include "planner/partials/field.html" with field=form.username %}
+        <div class="field-row">
+          {% include "planner/partials/field.html" with field=form.password1 %}
+          {% include "planner/partials/field.html" with field=form.password2 %}
+        </div>
+      </fieldset>
+
+      <fieldset class="register-group">
+        <legend>Travel preferences</legend>
+        {% include "planner/partials/field.html" with field=form.home_city %}
+        <div class="field-row">
+          {% include "planner/partials/field.html" with field=form.preferred_currency %}
+          {% include "planner/partials/field.html" with field=form.travel_pace %}
+        </div>
+      </fieldset>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg">Create account</button>
+      <p class="small muted register-foot">Already have an account? <a href="{% url 'login' %}">Log in</a>. TripCraft never sends marketing emails.</p>
     </form>
   </div>
 </section>

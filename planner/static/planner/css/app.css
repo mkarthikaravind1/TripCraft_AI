@@ -560,3 +560,27 @@ input[type="range"] { width: 100%; accent-color: var(--brand); height: 28px; }
   .js .reveal { opacity: 1; transform: none; }
   a { color: #000; text-decoration: none; }
 }
+
+/* ---------- Registration ---------- */
+.register-page { padding-top: 48px; }
+.register-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 48px; align-items: start; }
+.register-aside { position: sticky; top: 96px; display: grid; gap: 14px; }
+.register-aside h1 { font-size: clamp(2rem, 3.6vw, 2.7rem); margin: 0; }
+.register-aside p { margin: 0; }
+.register-points { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; color: var(--ink-2); font-size: .95rem; }
+.register-points li { display: flex; gap: .5em; align-items: flex-start; }
+.register-points .icon { color: var(--brand); margin-top: .2em; }
+.register-photo { margin: 10px 0 0; border-radius: var(--radius-lg); overflow: hidden; aspect-ratio: 16 / 10; background: var(--sage-100); box-shadow: var(--shadow); }
+.register-photo img { width: 100%; height: 100%; object-fit: cover; }
+.register-card { padding: 32px; display: grid; gap: 8px; }
+.register-group { border: 0; margin: 0 0 8px; padding: 0; min-width: 0; }
+.register-group + .register-group { border-top: 1px solid var(--border); padding-top: 20px; }
+.register-group legend { font: 600 1.25rem/1.2 var(--font-display); padding: 0; margin-bottom: 16px; }
+.register-card .field ul { padding-left: 1.1em; font-size: .82rem; color: var(--muted); margin: 6px 0 0; }
+.register-foot { margin: 6px 0 0; text-align: center; }
+@media (max-width: 920px) {
+  .register-grid { grid-template-columns: 1fr; gap: 28px; }
+  .register-aside { position: static; }
+  .register-photo { display: none; }
+}
+@media (max-width: 560px) { .register-card { padding: 20px; } }

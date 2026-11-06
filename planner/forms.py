@@ -157,10 +157,70 @@ class TripForm(forms.Form):
         return cleaned
 
 
+NAME_RE = re.compile(r"^[^\W\d_][\w\s.'\-]*$", re.UNICODE)
+
+
 class SignUpForm(UserCreationForm):
+    """Registration: account details on Django's User, travel preferences on UserProfile."""
+
+    full_name = forms.CharField(
+        max_length=100, min_length=2,
+        widget=forms.TextInput(attrs={"autocomplete": "name", "placeholder": "e.g. Priya Sharma"}),
+    )
+    email = forms.EmailField(
+        max_length=254,
+        widget=forms.EmailInput(attrs={"autocomplete": "email", "placeholder": "you@example.com"}),
+    )
+    home_city = forms.CharField(
+        label="Home city", max_length=100, required=False,
+        help_text="We'll use it as your default starting point when you plan a trip.",
+        widget=forms.TextInput(attrs={"autocomplete": "address-level2", "placeholder": "e.g. Chennai"}),
+    )
+    preferred_currency = forms.ChoiceField(label="Preferred currency", choices=CURRENCIES, initial="INR")
+    travel_pace = forms.ChoiceField(label="Usual travel pace", choices=Trip.Pace.choices, initial=Trip.Pace.BALANCED)
+
     class Meta:
         model = User
-        fields = ("username",)
+        fields = ("full_name", "email", "username")
+
+    field_order = ["full_name", "email", "username", "password1", "password2",
+                   "home_city", "preferred_currency", "travel_pace"]
+
+    def clean_full_name(self):
+        name = " ".join(self.cleaned_data["full_name"].split())
+        if not NAME_RE.match(name):
+            raise forms.ValidationError("Please enter your name using letters (spaces, dots, hyphens and apostrophes are fine).")
+        return name
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("An account with this email already exists. Try logging in instead.")
+        return email
+
+    def clean_home_city(self):
+        city = " ".join(self.cleaned_data.get("home_city", "").split())
+        if city and not PLACE_RE.match(city):
+            raise forms.ValidationError("Please enter a city name using letters, e.g. “Chennai”.")
+        return city
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data["email"]
+        first, _, last = self.cleaned_data["full_name"].partition(" ")
+        user.first_name, user.last_name = first[:150], last[:150]
+        if commit:
+            from .models import UserProfile
+
+            user.save()
+            UserProfile.objects.create(
+                user=user,
+                full_name=self.cleaned_data["full_name"],
+                home_city=self.cleaned_data["home_city"],
+                preferred_currency=self.cleaned_data["preferred_currency"],
+                travel_pace=self.cleaned_data["travel_pace"],
+            )
+        return user
 
 
 class BudgetSettingsForm(forms.Form):

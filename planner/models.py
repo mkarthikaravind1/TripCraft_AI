@@ -210,3 +210,22 @@ class Expense(models.Model):
     @property
     def source_label(self):
         return "Your figure" if self.user_amount is not None else self.get_source_display()
+
+
+class UserProfile(models.Model):
+    """Registration details beyond Django's built-in user (username, email, password)."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
+    full_name = models.CharField(max_length=100)
+    home_city = models.CharField(max_length=100, blank=True, help_text="Used as the default starting point.")
+    preferred_currency = models.CharField(max_length=3, default="INR")
+    travel_pace = models.CharField(max_length=10, choices=Trip.Pace.choices, default=Trip.Pace.BALANCED)
+    is_sample = models.BooleanField(default=False, help_text="Demo account created by seed_sample_users (cannot log in).")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["full_name"]
+
+    def __str__(self):
+        return f"{self.full_name} ({self.user.username})"

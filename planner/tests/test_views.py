@@ -137,7 +137,11 @@ class TripFlowTests(TestCase):
 
     def test_anonymous_trips_attach_on_signup(self):
         trip, _ = self.create_trip(FakeProvider(response=ai_plan_json(3)))
-        self.client.post(reverse("signup"), {"username": "carol", "password1": "pw-Strong-123", "password2": "pw-Strong-123"})
+        self.client.post(reverse("signup"), {
+            "full_name": "Carol Dsouza", "email": "carol@example.com", "username": "carol",
+            "password1": "pw-Strong-123", "password2": "pw-Strong-123",
+            "home_city": "", "preferred_currency": "INR", "travel_pace": "balanced",
+        })
         trip.refresh_from_db()
         self.assertEqual(trip.user.username, "carol")
 
