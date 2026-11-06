@@ -15,17 +15,25 @@ SAMPLE_USERS = [
      "home_city": "Bengaluru", "preferred_currency": "INR", "travel_pace": "relaxed"},
     {"username": "sample_rahul", "full_name": "Rahul Verma", "email": "rahul.verma@example.com",
      "home_city": "Dubai", "preferred_currency": "AED", "travel_pace": "balanced"},
-    {"username": "sample_meera", "full_name": "Meera Nair", "email": "meera.nair@example.com",
+    {"username": "sample_karthik", "full_name": "Karthik Aravind M", "email": "karthik.aravind@example.com",
      "home_city": "Kochi", "preferred_currency": "INR", "travel_pace": "relaxed"},
 ]
 
 
 class Command(BaseCommand):
-    help = "Create or update 5 sample registered users (login disabled). Safe to run repeatedly."
+    help = (
+        "Create or update 5 sample registered users (login disabled) and remove sample users that are no "
+        "longer in the list. Safe to run repeatedly; real accounts are never touched."
+    )
 
     @transaction.atomic
     def handle(self, *args, **options):
         User = get_user_model()
+        wanted = [data["username"] for data in SAMPLE_USERS]
+        retired = User.objects.filter(profile__is_sample=True).exclude(username__in=wanted)
+        removed = list(retired.values_list("username", flat=True))
+        retired.delete()
+
         created_count = 0
         for data in SAMPLE_USERS:
             first, _, last = data["full_name"].partition(" ")
@@ -48,4 +56,5 @@ class Command(BaseCommand):
             created_count += created
         self.stdout.write(self.style.SUCCESS(
             f"Sample users ready: {len(SAMPLE_USERS)} total, {created_count} newly created (login disabled)."
+            + (f" Removed: {', '.join(removed)}." if removed else "")
         ))

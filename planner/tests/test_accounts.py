@@ -91,6 +91,17 @@ class SampleUserTests(TestCase):
             self.assertTrue(profile.user.email.endswith("@example.com"))
             self.assertTrue(profile.home_city and profile.full_name)
 
+    def test_retired_samples_removed_but_real_accounts_kept(self):
+        old = User.objects.create_user("sample_meera", email="meera.nair@example.com")
+        UserProfile.objects.create(user=old, full_name="Meera Nair", is_sample=True)
+        real = User.objects.create_user("sample_fan", password="x-Strong-pass-1")  # real user, not a sample
+        UserProfile.objects.create(user=real, full_name="Real Person")
+        call_command("seed_sample_users", verbosity=0)
+        self.assertFalse(User.objects.filter(username="sample_meera").exists())
+        self.assertTrue(User.objects.filter(username="sample_fan").exists())
+        mine = User.objects.get(username="sample_karthik")
+        self.assertEqual((mine.profile.full_name, mine.email), ("Karthik Aravind M", "karthik.aravind@example.com"))
+
     def test_sample_users_cannot_log_in(self):
         call_command("seed_sample_users", verbosity=0)
         self.assertFalse(self.client.login(username="sample_priya", password=""))
